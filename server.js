@@ -17,16 +17,16 @@ const routes = {
   '/comments': {
     'POST': createComment
   },
-  '/comments/:id': {
-    'PUT': updateComment
-    'DELETE': deleteComment
-  },
-  '/comments/:id/upvote': {
-    'PUT': upvoteComment
-  },
-  '/comments/:id/downvote': {
-    'PUT': downvoteComment
-  }
+  // '/comments/:id': {
+  //   'PUT': updateComment,
+  //   'DELETE': deleteComment
+  // },
+  // '/comments/:id/upvote': {
+  //   'PUT': upvoteComment
+  // },
+  // '/comments/:id/downvote': {
+  //   'PUT': downvoteComment
+  // },
   '/articles': {
     'GET': getArticles,
     'POST': createArticle
@@ -85,6 +85,32 @@ function getOrCreateUser(url, request) {
     database.users[username] = user;
 
     response.body = {user: user};
+    response.status = 201;
+  } else {
+    response.status = 400;
+  }
+
+  return response;
+}
+
+function createComment(url, request) {
+  const body = request.body && request.body.comment
+  const {comments, users} = database;
+  const response = {};
+
+  if (body) {
+    const {body, articleId, username} = body;
+    const comment = {
+      id: database.nextCommentId++,
+      body: body,
+      username: username,
+      articleId: articleId,
+      upvotedBy: [],
+      downvotedBy: []
+    };
+    comments[comment.id] = comment;
+    users[username].commentIds.push(comment.id);
+    response.body = {comment: comment};
     response.status = 201;
   } else {
     response.status = 400;
