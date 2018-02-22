@@ -12,6 +12,19 @@ const routes = {
   '/users/:username': {
     'GET': getUser
   },
+  '/comments': {
+    'POST': createComment
+  },
+  '/comments/:id': {
+    'PUT': updateComment
+    'DELETE': deleteComment
+  },
+  '/comments/:id/upvote': {
+    'PUT': upvoteComment
+  },
+  '/comments/:id/downvote': {
+    'PUT': downvoteComment
+  }
   '/articles': {
     'GET': getArticles,
     'POST': createArticle
