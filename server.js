@@ -119,6 +119,27 @@ function createComment(url, request) {
   return response;
 }
 
+function updateComment(url, request) {
+  const id = Number(url.split('/').filter(segment => segment)[1]);
+  const body = request.body && request.body.comment;
+  const {comments} = database;
+  const savedComment = comments[id];
+  const response = {};
+
+  if (!id || !body) {
+    response.status = 400;
+  } else if (!savedComment) {
+    response.status = 404;
+  } else {
+    const {body : b} = body;
+    savedComment.body = b || savedComment.body;
+    response.body = {comment: savedComment};
+    response.status = 200;
+  }
+
+  return response;
+}
+
 function getArticles(url, request) {
   const response = {};
 
