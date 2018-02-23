@@ -17,10 +17,10 @@ const routes = {
   '/comments': {
     'POST': createComment
   },
-  // '/comments/:id': {
-  //   'PUT': updateComment,
-  //   'DELETE': deleteComment
-  // },
+  '/comments/:id': {
+    'PUT': updateComment,
+    // 'DELETE': deleteComment
+  },
   // '/comments/:id/upvote': {
   //   'PUT': upvoteComment
   // },
@@ -94,15 +94,15 @@ function getOrCreateUser(url, request) {
 }
 
 function createComment(url, request) {
-  const body = request.body && request.body.comment
+  const body = request.body && request.body.comment;
   const {comments, users} = database;
   const response = {};
 
   if (body) {
-    const {body, articleId, username} = body;
+    const {body : b, articleId, username} = body;
     const comment = {
       id: database.nextCommentId++,
-      body: body,
+      body: b,
       username: username,
       articleId: articleId,
       upvotedBy: [],
