@@ -2,7 +2,9 @@
 let database = {
   users: {},
   articles: {},
-  nextArticleId: 1
+  comments: {},
+  nextArticleId: 1,
+  nextCommentId: 1
 };
 
 const routes = {
@@ -11,6 +13,19 @@ const routes = {
   },
   '/users/:username': {
     'GET': getUser
+  },
+  '/comments': {
+    'POST': createComment
+  },
+  '/comments/:id': {
+    'PUT': updateComment,
+    'DELETE': deleteComment
+  },
+  '/comments/:id/upvote': {
+    'PUT': upvoteComment
+  },
+  '/comments/:id/downvote': {
+    'PUT': downvoteComment
   },
   '/articles': {
     'GET': getArticles,
@@ -73,6 +88,131 @@ function getOrCreateUser(url, request) {
     response.status = 201;
   } else {
     response.status = 400;
+  }
+
+  return response;
+}
+
+function createComment(url, request) {
+  const body = request.body && request.body.comment;
+  const {comments, users} = database;
+  const response = {};
+
+  if (body) {
+    const {body : b, articleId, username} = body;
+    const comment = {
+      id: database.nextCommentId++,
+      body: b,
+      username: username,
+      articleId: articleId,
+      upvotedBy: [],
+      downvotedBy: []
+    };
+    comments[comment.id] = comment;
+    users[username].commentIds.push(comment.id);
+    response.body = {comment: comment};
+    response.status = 201;
+  } else {
+    response.status = 400;
+  }
+
+  return response;
+}
+
+function updateComment(url, request) {
+  const id = Number(url.split('/').filter(segment => segment)[1]);
+  const body = request.body && request.body.comment;
+  const {comments} = database;
+  const savedComment = comments[id];
+  const response = {};
+
+  if (!id || !body) {
+    response.status = 400;
+  } else if (!savedComment) {
+    response.status = 404;
+  } else {
+    const {body : b} = body;
+    savedComment.body = b || savedComment.body;
+    response.body = {comment: savedComment};
+    response.status = 200;
+  }
+
+  return response;
+}
+
+function deleteComment(url, request) {
+  const id = Number(url.split('/').filter(segment => segment)[1]);
+  const {users, comments} = database;
+  const savedComment = comments[id];
+  const response = {}
+
+  console.log(users, comments);
+
+  if (savedComment) {
+    const userCommentId = users[savedComment.username].commentIds;
+    userCommentId.indexOf(id) < 0 ? null : userCommentId.splice(userCommentId.indexOf(id), 1);
+    delete comments[id];
+    response.status = 204;
+  } else {
+    response.status = 400;
+  }
+
+  console.log(users, comments);
+
+  return response;
+}
+
+function upvoteComment(url, request) {
+  const id = Number(url.split('/').filter(segment => segment)[1]);
+  const username = request.body && request.body.username;
+  const {users, comments} = database;
+  let savedComment = comments[id];
+  const response = {};
+
+  if (id && savedComment && username) {
+    const userHasUpvoted = savedComment.upvotedBy.indexOf(username);
+    const userHasDownvoted = savedComment.downvotedBy.indexOf(username);
+    if (userHasDownvoted > -1) {
+      savedComment.downvotedBy.splice(userHasDownvoted, 1);
+      savedComment = upvote(savedComment, username);
+    } else if (userHasUpvoted < 0) {
+      savedComment = upvote(savedComment, username);
+    }
+    response.body = {comment: savedComment};
+    response.status = 200;
+  } else if (!savedComment){
+    response.body = {message: `Comment with id of ${id} not found.`}
+    response.status = 404;
+  } else {
+   response.status = 400;
+  }
+
+  return response;
+}
+
+function downvoteComment(url, request) {
+  const id = Number(url.split('/').filter(segment => segment)[1]);
+  const username = request.body && request.body.username;
+  const {users, comments} = database;
+  let savedComment = comments[id];
+  const response = {};
+
+  if (id && savedComment && username) {
+    const userHasUpvoted = savedComment.upvotedBy.indexOf(username);
+    const userHasDownvoted = savedComment.downvotedBy.indexOf(username);
+    if (userHasUpvoted > -1) {
+      savedComment.upvotedBy.splice(userHasUpvoted,1);
+      savedComment = downvote(savedComment, username);
+    } else if (userHasDownvoted < 0) {
+      savedComment = downvote(savedComment, username);
+    }
+    response.body = {comment: savedComment};
+    response.status = 200;
+  } else if (!savedComment){
+    response.body = {message: `Comment with id of ${id} not found.`}
+    response.status = 404;
+  } else {
+   response.status = 400;
   }
 
   return response;
