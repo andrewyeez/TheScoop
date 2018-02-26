@@ -95,23 +95,31 @@ function getOrCreateUser(url, request) {
 
 function createComment(url, request) {
   const body = request.body && request.body.comment;
-  const {comments, users} = database;
+  const {comments, users, articles} = database;
   const response = {};
+
 
   if (body) {
     const {body : b, articleId, username} = body;
-    const comment = {
-      id: database.nextCommentId++,
-      body: b,
-      username: username,
-      articleId: articleId,
-      upvotedBy: [],
-      downvotedBy: []
-    };
-    comments[comment.id] = comment;
-    users[username].commentIds.push(comment.id);
-    response.body = {comment: comment};
-    response.status = 201;
+    const user = users[username];
+    const article = articles[articleId];
+    if (articleId && username && user && article && b) {
+      const comment = {
+        id: database.nextCommentId++,
+        body: b,
+        username: username,
+        articleId: articleId,
+        upvotedBy: [],
+        downvotedBy: []
+      };
+      comments[comment.id] = comment;
+      user.commentIds.push(comment.id);
+      article.commentIds.push(comment.id);
+      response.body = {comment: comment};
+      response.status = 201;
+    } else {
+      response.status = 400;
+    }
   } else {
     response.status = 400;
   }
@@ -146,8 +154,6 @@ function deleteComment(url, request) {
   const savedComment = comments[id];
   const response = {}
 
-  console.log(users, comments);
-
   if (savedComment) {
     const userCommentId = users[savedComment.username].commentIds;
     userCommentId.indexOf(id) < 0 ? null : userCommentId.splice(userCommentId.indexOf(id), 1);
@@ -156,8 +162,6 @@ function deleteComment(url, request) {
   } else {
     response.status = 400;
   }
-
-  console.log(users, comments);
 
   return response;
 }
