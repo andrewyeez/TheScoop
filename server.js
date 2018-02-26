@@ -19,7 +19,7 @@ const routes = {
   },
   '/comments/:id': {
     'PUT': updateComment,
-    // 'DELETE': deleteComment
+    'DELETE': deleteComment
   },
   // '/comments/:id/upvote': {
   //   'PUT': upvoteComment
@@ -136,6 +136,28 @@ function updateComment(url, request) {
     response.body = {comment: savedComment};
     response.status = 200;
   }
+
+  return response;
+}
+
+function deleteComment(url, request) {
+  const id = Number(url.split('/').filter(segment => segment)[1]);
+  const {users, comments} = database;
+  const savedComment = comments[id];
+  const response = {}
+
+  console.log(users, comments);
+
+  if (savedComment) {
+    const userCommentId = users[savedComment.username].commentIds;
+    userCommentId.indexOf(id) < 0 ? null : userCommentId.splice(userCommentId.indexOf(id), 1);
+    delete comments[id];
+    response.status = 204;
+  } else {
+    response.status = 404;
+  }
+
+  console.log(users, comments);
 
   return response;
 }
