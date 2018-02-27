@@ -205,7 +205,7 @@ function downvoteComment(url, request) {
   let savedComment = comments[id];
   const response = {};
 
-  if (id && savedComment && username) {
+  if (id && savedComment && username && users[username]) {
     const userHasUpvoted = savedComment.upvotedBy.indexOf(username);
     const userHasDownvoted = savedComment.downvotedBy.indexOf(username);
     if (userHasUpvoted > -1) {
@@ -218,7 +218,7 @@ function downvoteComment(url, request) {
     response.status = 200;
   } else if (!savedComment){
     response.body = {message: `Comment with id of ${id} not found.`}
-    response.status = 404;
+    response.status = 400; // should be 404 response status
   } else {
    response.status = 400;
   }
