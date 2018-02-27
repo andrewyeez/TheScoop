@@ -150,17 +150,21 @@ function updateComment(url, request) {
 
 function deleteComment(url, request) {
   const id = Number(url.split('/').filter(segment => segment)[1]);
-  const {users, comments} = database;
+  const {users, comments, articles} = database;
   const savedComment = comments[id];
   const response = {}
 
   if (savedComment) {
     const userCommentId = users[savedComment.username].commentIds;
+    const articleCommentId = articles[savedComment.articleId].commentIds;
     userCommentId.indexOf(id) < 0 ? null : userCommentId.splice(userCommentId.indexOf(id), 1);
-    delete comments[id];
+    articleCommentId.indexOf(id) < 0 ? null : articleCommentId.splice(articleCommentId.indexOf(id), 1);
+    comments[id] = null;
+    // makes a test fail
+    // delete comments[id];
     response.status = 204;
   } else {
-    response.status = 400;
+    response.status = 404;
   }
 
   return response;
