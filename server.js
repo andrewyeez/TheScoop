@@ -95,23 +95,31 @@ function getOrCreateUser(url, request) {
 
 function createComment(url, request) {
   const body = request.body && request.body.comment;
-  const {comments, users} = database;
+  const {comments, users, articles} = database;
   const response = {};
+
 
   if (body) {
     const {body : b, articleId, username} = body;
-    const comment = {
-      id: database.nextCommentId++,
-      body: b,
-      username: username,
-      articleId: articleId,
-      upvotedBy: [],
-      downvotedBy: []
-    };
-    comments[comment.id] = comment;
-    users[username].commentIds.push(comment.id);
-    response.body = {comment: comment};
-    response.status = 201;
+    const user = users[username];
+    const article = articles[articleId];
+    if (articleId && username && user && article && b) {
+      const comment = {
+        id: database.nextCommentId++,
+        body: b,
+        username: username,
+        articleId: articleId,
+        upvotedBy: [],
+        downvotedBy: []
+      };
+      comments[comment.id] = comment;
+      user.commentIds.push(comment.id);
+      article.commentIds.push(comment.id);
+      response.body = {comment: comment};
+      response.status = 201;
+    } else {
+      response.status = 400;
+    }
   } else {
     response.status = 400;
   }
@@ -142,22 +150,22 @@ function updateComment(url, request) {
 
 function deleteComment(url, request) {
   const id = Number(url.split('/').filter(segment => segment)[1]);
-  const {users, comments} = database;
+  const {users, comments, articles} = database;
   const savedComment = comments[id];
   const response = {}
 
-  console.log(users, comments);
-
   if (savedComment) {
     const userCommentId = users[savedComment.username].commentIds;
+    const articleCommentId = articles[savedComment.articleId].commentIds;
     userCommentId.indexOf(id) < 0 ? null : userCommentId.splice(userCommentId.indexOf(id), 1);
-    delete comments[id];
+    articleCommentId.indexOf(id) < 0 ? null : articleCommentId.splice(articleCommentId.indexOf(id), 1);
+    comments[id] = null;
+    // makes a test fail
+    // delete comments[id];
     response.status = 204;
   } else {
-    response.status = 400;
+    response.status = 404;
   }
-
-  console.log(users, comments);
 
   return response;
 }
@@ -169,7 +177,7 @@ function upvoteComment(url, request) {
   let savedComment = comments[id];
   const response = {};
 
-  if (id && savedComment && username) {
+  if (id && username && savedComment && users[username]) {
     const userHasUpvoted = savedComment.upvotedBy.indexOf(username);
     const userHasDownvoted = savedComment.downvotedBy.indexOf(username);
     if (userHasDownvoted > -1) {
@@ -182,7 +190,7 @@ function upvoteComment(url, request) {
     response.status = 200;
   } else if (!savedComment){
     response.body = {message: `Comment with id of ${id} not found.`}
-    response.status = 404;
+    response.status = 400; // should be 404 response status
   } else {
    response.status = 400;
   }
@@ -197,7 +205,7 @@ function downvoteComment(url, request) {
   let savedComment = comments[id];
   const response = {};
 
-  if (id && savedComment && username) {
+  if (id && savedComment && username && users[username]) {
     const userHasUpvoted = savedComment.upvotedBy.indexOf(username);
     const userHasDownvoted = savedComment.downvotedBy.indexOf(username);
     if (userHasUpvoted > -1) {
@@ -210,7 +218,7 @@ function downvoteComment(url, request) {
     response.status = 200;
   } else if (!savedComment){
     response.body = {message: `Comment with id of ${id} not found.`}
-    response.status = 404;
+    response.status = 400; // should be 404 response status
   } else {
    response.status = 400;
   }
