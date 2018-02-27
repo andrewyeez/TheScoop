@@ -1,11 +1,19 @@
-// database is let instead of const to allow us to modify it in test.js
-let database = {
-  users: {},
-  articles: {},
-  comments: {},
-  nextArticleId: 1,
-  nextCommentId: 1
-};
+const yaml = require('js-yaml');
+const toyaml = require('write-yaml');
+const fs = require('fs');
+const dbFile = fs.readFileSync('./src/utils/database.yaml');
+
+function loadDatabase() {
+  return yaml.safeLoad(dbFile);
+}
+
+function saveDatabase(data) {
+  toyaml('./src/utils/database.yaml', data, function(e){
+    console.log(e);
+  })
+}
+
+const database = loadDatabase();
 
 const routes = {
   '/users': {
@@ -89,7 +97,7 @@ function getOrCreateUser(url, request) {
   } else {
     response.status = 400;
   }
-
+  saveDatabase(database);
   return response;
 }
 
@@ -97,7 +105,6 @@ function createComment(url, request) {
   const body = request.body && request.body.comment;
   const {comments, users, articles} = database;
   const response = {};
-
 
   if (body) {
     const {body : b, articleId, username} = body;
@@ -123,7 +130,7 @@ function createComment(url, request) {
   } else {
     response.status = 400;
   }
-
+  saveDatabase(database);
   return response;
 }
 
@@ -144,7 +151,7 @@ function updateComment(url, request) {
     response.body = {comment: savedComment};
     response.status = 200;
   }
-
+  saveDatabase(database);
   return response;
 }
 
@@ -166,7 +173,7 @@ function deleteComment(url, request) {
   } else {
     response.status = 404;
   }
-
+  saveDatabase(database);
   return response;
 }
 
@@ -194,7 +201,7 @@ function upvoteComment(url, request) {
   } else {
    response.status = 400;
   }
-
+  saveDatabase(database);
   return response;
 }
 
@@ -222,7 +229,7 @@ function downvoteComment(url, request) {
   } else {
    response.status = 400;
   }
-
+  saveDatabase(database);
   return response;
 }
 
@@ -236,7 +243,7 @@ function getArticles(url, request) {
         .filter(article => article)
         .sort((article1, article2) => article2.id - article1.id)
   };
-
+  saveDatabase(database);
   return response;
 }
 
@@ -256,7 +263,7 @@ function getArticle(url, request) {
   } else {
     response.status = 400;
   }
-
+  saveDatabase(database);
   return response;
 }
 
@@ -284,7 +291,7 @@ function createArticle(url, request) {
   } else {
     response.status = 400;
   }
-
+  saveDatabase(database);
   return response;
 }
 
@@ -305,7 +312,7 @@ function updateArticle(url, request) {
     response.body = {article: savedArticle};
     response.status = 200;
   }
-
+  saveDatabase(database);
   return response;
 }
 
@@ -328,7 +335,7 @@ function deleteArticle(url, request) {
   } else {
     response.status = 400;
   }
-
+  saveDatabase(database);
   return response;
 }
 
@@ -346,7 +353,7 @@ function upvoteArticle(url, request) {
   } else {
     response.status = 400;
   }
-
+  saveDatabase(database);
   return response;
 }
 
@@ -364,7 +371,7 @@ function downvoteArticle(url, request) {
   } else {
     response.status = 400;
   }
-
+  saveDatabase(database);
   return response;
 }
 
